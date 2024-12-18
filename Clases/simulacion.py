@@ -238,16 +238,17 @@ class Simulacion:
                         fila.fin_toma_pedido = fin_toma_pedido
                         fila.fin_toma_pedido_mozos[mozo.id-1] = fila.fin_toma_pedido
                         break
-        for mozo in self.mozos:
-            if mozo.estaLibre() and grupo.estado == "Esperando entrega pedido":
-                mozo.ocupar()
-                mozo.enMesa = mesa
-                grupo.estado = "Esperando entrega pedido"
-                grupo.mozo = mozo
-                fin_llevado_pedido = fila.calcLlevadoPedido()
-                fila.fin_llevado_pedido = fin_llevado_pedido
-                fila.fin_llevado_pedido_mozos[mozo.id-1] = fin_llevado_pedido
-                break
+        for grupo in self.grupos:
+            for mozo in self.mozos:
+                if mozo.estaLibre() and grupo.estado == "Esperando entrega pedido":
+                    mozo.ocupar()
+                    mozo.enMesa = mesa
+                    grupo.estado = "Esperando entrega pedido"
+                    grupo.mozo = mozo
+                    fin_llevado_pedido = fila.calcLlevadoPedido()
+                    fila.fin_llevado_pedido = fin_llevado_pedido
+                    fila.fin_llevado_pedido_mozos[mozo.id-1] = fin_llevado_pedido
+                    break
         fila.fin_preparacion_mesas[indice_mesa] = None
         fila.evento = f'Fin Preparacion de pedido - mesa {mesa.numero}'
 
