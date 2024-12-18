@@ -345,7 +345,7 @@ class Simulacion:
         desde = self.minuto_inicial
         hasta = self.minuto_inicial + self.iteraciones_a_mostrar
         print(f"Desde: {desde} - Hasta: {hasta}")
-        ultimaFila = self.filas[-1].parseFila()
+        ultimaFila = self.filas[-2].parseFila()
         for i, fila in enumerate(self.filas):
             if i >= desde and i < hasta:
                 filas_simulacion.append(fila.parseFila())
