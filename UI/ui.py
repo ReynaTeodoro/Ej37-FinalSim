@@ -810,6 +810,7 @@ class Ui_SimulacionRestaurant(object):
             else:
                 return False
     def cargarTblSimulacion(self,filas,resultados):
+        print("Cargando tabla")
         self.tbl_simulacion.setRowCount(0)
 
         if not filas:
@@ -840,12 +841,16 @@ class Ui_SimulacionRestaurant(object):
                         estado = "" if valor == "None" else str(grupo["estado"])
                         tamaño = "" if valor == "None" else str(grupo["tamaño"])
                         self.tbl_simulacion.setItem(i, j , QTableWidgetItem(numero))
+                        self.tbl_simulacion.item(i, j).setFlags(self.tbl_simulacion.item(i, j).flags() & ~Qt.ItemIsEditable)
                         self.tbl_simulacion.setItem(i, j + 1, QTableWidgetItem(estado))
+                        self.tbl_simulacion.item(i, j + 1).setFlags(self.tbl_simulacion.item(i, j + 1).flags() & ~Qt.ItemIsEditable)
                         self.tbl_simulacion.setItem(i, j + 2, QTableWidgetItem(tamaño))
+                        self.tbl_simulacion.item(i, j + 2).setFlags(self.tbl_simulacion.item(i, j + 2).flags() & ~Qt.ItemIsEditable)
                         j += 3
                 else:
                     valor = "" if valor == "None" else str(valor)
                     item = QTableWidgetItem(valor)
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     self.tbl_simulacion.setItem(i, j, item)
 
         # Eliminar la primera columna (si es necesario)
