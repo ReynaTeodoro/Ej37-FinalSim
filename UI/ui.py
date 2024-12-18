@@ -661,18 +661,18 @@ class Ui_SimulacionRestaurant(object):
                 p = np.float64(p)
                 min = np.float64(min)
             except:
-                self.mostrarError("Los porcentajes o minutos deben ser numeros")
+                self.mostrarError("Los porcentajes o minutos deben ser numeros en Menu")
                 return False
         self.tbl_menu.item(self.tbl_menu.rowCount() - 1, 1).setText(f'{suma}%')
         self.tbl_menu.item(self.tbl_menu.rowCount() - 1, 0).setText(f'{self.tbl_menu.rowCount() - 1}')
         if suma != 100:
-            self.mostrarError("Los porcentajes deben sumar 100")
+            self.mostrarError("Los porcentajes deben sumar 100 en Menu")
             return False
         return True
     def validarTablaGrupo(self):
         #Validar que la tabla de menu tenga al menos un item
         if self.tbl_grupo.rowCount() == 0:
-            self.mostrarError("Debe haber al menos un item en el menu")
+            self.mostrarError("Debe haber al menos un item en los grupos")
             return False
         suma = 0
         for i in range(self.tbl_grupo.rowCount() - 1 ):
@@ -687,15 +687,15 @@ class Ui_SimulacionRestaurant(object):
                     self.mostrarError("Los tamaños de los grupos deben ser números enteros mayores a 0")
                     return False
                 if p < 0:
-                    self.mostrarError("Los porcentajes deben ser mayores a 0")
+                    self.mostrarError("Los porcentajes en Grupos deben ser mayores a 0")
                     return False
             except:
-                self.mostrarError("Los porcentajes deben ser numeros")
+                self.mostrarError("Los porcentajes en Grupos deben ser numeros")
                 return False
         self.tbl_grupo.item(self.tbl_grupo.rowCount() - 1, 1).setText(f'{suma}%')
         self.tbl_grupo.item(self.tbl_grupo.rowCount() - 1, 0).setText(f'Total')
         if suma != 100:
-            self.mostrarError("Los porcentajes deben sumar 100")
+            self.mostrarError("Los porcentajes en Grupos deben sumar 100")
             return False
         return True
     def validarInputs(self):
@@ -743,7 +743,6 @@ class Ui_SimulacionRestaurant(object):
             media_comer = np.float64(self.input_comer_media.value())
             comer_desv_estandar = np.float64(self.input_comer_devEstandar.value())
             if not self.validarTablaMenu() or not self.validarTablaGrupo():
-                self.mostrarError("Error al validar las tablas")
                 return
             if not self.validarNormal():
                 return
