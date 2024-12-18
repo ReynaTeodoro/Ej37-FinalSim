@@ -70,6 +70,7 @@ class Simulacion:
         self.mozos = []
         self.cola_mesas = []
         self.grupos = []
+        self.grupos_finalizados = []
         self.reloj = 0.0
         
 
@@ -96,7 +97,7 @@ class Simulacion:
                 f"Grupos items: {self.grupos_items}\n" \
                 f"Generador: {self.generador}"
     def obtenerIdGrupo(self):
-        return len(self.grupos) + 1
+        return len(self.grupos) + len(self.grupos_finalizados) + 1
     def inicializar(self):
         #crear mesas
         self.mesas = [Mesa(i) for i in range(1, self.cant_mesas + 1)]
@@ -126,7 +127,6 @@ class Simulacion:
         self.personas_totales += grupo.tamaño
         for mesa in self.mesas:
             if mesa.estaLibre():
-                mesa_libre = mesa
                 grupo.mesa = mesa
                 mesa.ocupar()
                 grupo.estado = "Esperando toma de pedido"
@@ -153,6 +153,25 @@ class Simulacion:
                 fila.fin_toma_pedido_mozos[mozo.id-1] = fila.fin_toma_pedido
                 break
         self.grupos.append(grupo)
+        if grupo.estado == "Rechazado":
+            self.grupos_finalizados.append(grupo)
+            fila.grupos.append(grupo)
+        
+        #Iniciar llevado de pedido si hay mozo disponible
+        for grupo in self.grupos:
+            if grupo.mesa:
+                if grupo.mesa.estado == "Pedido listo" and mozo.enMesa is None and grupo.estado == "Esperando entrega pedido":
+                    mesa = grupo.mesa
+                    mozo.ocupar()
+                    mozo.enMesa = mesa
+                    grupo.estado = "Esperando entrega pedido"
+                    grupo.mozo = mozo
+                    fin_llevado_pedido = fila.calcLlevadoPedido()
+                    fila.fin_llevado_pedido = fin_llevado_pedido
+                    fila.fin_llevado_pedido_mozos[mozo.id-1] = fin_llevado_pedido
+                    break
+        
+
         fila.evento = f'Llegada de cliente {grupo.id_grupo}' 
         #obtiene la siguiente llegada de cliente
         fila.calcLlegadaCliente()
@@ -218,7 +237,7 @@ class Simulacion:
                         fila.fin_toma_pedido_mozos[mozo.id-1] = fila.fin_toma_pedido
                         break
         for mozo in self.mozos:
-            if mozo.estaLibre() :
+            if mozo.estaLibre() and grupo.estado == "Esperando entrega pedido":
                 mozo.ocupar()
                 mozo.enMesa = mesa
                 grupo.estado = "Esperando entrega pedido"
@@ -248,9 +267,10 @@ class Simulacion:
         indice_mesa = min((i for i, v in enumerate(fila.fin_comer_mesas) if v is not None), key=lambda i: fila.fin_comer_mesas[i])
         mesa = self.mesas[indice_mesa]
         mesa.desocupar()
-        for grupo in self.grupos:
+        for index, grupo in enumerate(self.grupos):
             if grupo.mesa == mesa and grupo.estado == "Comiendo":
                 grupo.estado = "Retirado"
+                fila.grupos.append(grupo)
                 break
         fila.fin_comer_mesas[indice_mesa] = None
         fila.evento = f'Retiro de clientes - mesa {mesa.numero}'
@@ -337,6 +357,9 @@ class Simulacion:
         else:
             # Obtener la última fila y calcular los próximos eventos
             ultima_fila = self.filas[-1]
+            for i,grupo in enumerate(ultima_fila.grupos):
+                if grupo.estado == "Rechazado" or grupo.estado == "Retirado":
+                    self.grupos.pop(i)
             nombres, valor = ultima_fila.calcSiguienteEvento()
 
             # Construir los resultados como una lista de tuplas

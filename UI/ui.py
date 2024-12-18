@@ -14,6 +14,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
 class Ui_SimulacionRestaurant(object):
+    def __init__(self):
+        self.cant_mesas = 6
     def setupUi(self, SimulacionRestaurant):
         SimulacionRestaurant.setObjectName("SimulacionRestaurant")
         SimulacionRestaurant.resize(1202, 743)
@@ -697,6 +699,7 @@ class Ui_SimulacionRestaurant(object):
 
         #Datos restaurante
         cant_mesas = np.int32(self.input_mesas_2.value())
+        self.cant_mesas = cant_mesas
         cant_mozos = np.int32(self.input_mozos_2.value())
 
         #Datos eventos
@@ -756,22 +759,43 @@ class Ui_SimulacionRestaurant(object):
     def cargarTblSimulacion(self,filas,resultados):
         self.tbl_simulacion.setRowCount(0)
 
-        if not filas:  
+        if not filas:
             return
 
-        columnas = list(filas[-1].keys())
+        
+        # max_grupos = 0
+        # for fila in filas:
+        #     if "grupos" in fila:
+        #         max_grupos = max(max_grupos, len(fila["grupos"]))
+        columnas = list(filas[-1].keys())[:-1]+["Grupo Numero","Estado","Tamaño"]*(self.cant_mesas +2)
         self.tbl_simulacion.setColumnCount(len(columnas))
         self.tbl_simulacion.setHorizontalHeaderLabels(columnas)
 
+        # Insertar todas las filas y establecer los valores en una sola pasada
         for i, fila in enumerate(filas):
             self.tbl_simulacion.insertRow(i)
-            iteracion = str(fila.get("i", ""))
-            self.tbl_simulacion.setVerticalHeaderItem(i, QTableWidgetItem(iteracion))
+            # Asignar el valor de la iteración directamente al encabezado de la fila
+            self.tbl_simulacion.setVerticalHeaderItem(i, QTableWidgetItem(str(fila.get("i", ""))))
+
             for j, (columna, valor) in enumerate(fila.items()):
-                if valor =="None":
+                # Si el valor es None, asignar una cadena vacía
+                if valor == []:
                     valor = ""
-                item = QTableWidgetItem(str(valor))
-                self.tbl_simulacion.setItem(i, j, item)
+                if columna == "grupos" and valor:
+                    for grupo in valor:
+                        numero = "" if valor == "None" else str(grupo["id_grupo"])
+                        estado = "" if valor == "None" else str(grupo["estado"])
+                        tamaño = "" if valor == "None" else str(grupo["tamaño"])
+                        self.tbl_simulacion.setItem(i, j , QTableWidgetItem(numero))
+                        self.tbl_simulacion.setItem(i, j + 1, QTableWidgetItem(estado))
+                        self.tbl_simulacion.setItem(i, j + 2, QTableWidgetItem(tamaño))
+                        j += 3
+                else:
+                    valor = "" if valor == "None" else str(valor)
+                    item = QTableWidgetItem(valor)
+                    self.tbl_simulacion.setItem(i, j, item)
+
+        # Eliminar la primera columna (si es necesario)
         self.tbl_simulacion.removeColumn(0)
         self.tbl_simulacion.resizeColumnsToContents()
         self.rta_personas.setText(str(resultados["personas_totales"]))

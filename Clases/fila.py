@@ -189,9 +189,7 @@ class Fila():
         fila["Prox llegada cliente"] = redondear(self.proxima_llegada_cliente)
         fila["RND tamaño"] = redondear(self.rnd_tamaño)
         fila["Tamaño grupo"] = redondear(self.tamaño_grupo)
-        fila["Personas Totales"] = redondear(self.personas_totales)
-        fila["Personas Atendidas"] = redondear(self.personas_atendidas)
-        fila["Personas Rechazadas"] = redondear(self.personas_rechazadas)
+
 
         if self.simulacion.toma_pedido_es_media:
             fila["RND toma pedido"] = redondear(self.rnd_tiempo_toma_pedido)
@@ -234,10 +232,16 @@ class Fila():
             fila["Mozo " + str(i+1)] = str(self.mozos[i].estado)
 
         
-
-        for i in range(len(self.grupos)):
-            fila["Grupo " + str(i+1)] = str(self.grupos[i].estado)
-            fila["Grupo " + str(i+1) + " Tamaño"] = redondear(self.grupos[i].tamaño)
+        fila["Personas Totales"] = redondear(self.personas_totales)
+        fila["Personas Atendidas"] = redondear(self.personas_atendidas)
+        fila["Personas Rechazadas"] = redondear(self.personas_rechazadas)
+        fila["grupos"] = []
+        for grupo in self.grupos:
+            fila["grupos"].append({
+                "id_grupo": grupo.id_grupo,
+                "tamaño": grupo.tamaño,
+                "estado": grupo.estado
+            })
 
         return fila
 
