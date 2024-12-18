@@ -406,6 +406,7 @@ class Ui_SimulacionRestaurant(object):
         
 
         self.retranslateUi(SimulacionRestaurant)
+        
         QtCore.QMetaObject.connectSlotsByName(SimulacionRestaurant)
         self.input_tf.setValue(1000)
 

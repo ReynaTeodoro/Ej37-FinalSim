@@ -251,7 +251,6 @@ class Simulacion:
         for grupo in self.grupos:
             if grupo.mesa == mesa and grupo.estado == "Comiendo":
                 grupo.estado = "Retirado"
-                fila.personas_atendidas += grupo.tamaño
                 break
         fila.fin_comer_mesas[indice_mesa] = None
         fila.evento = f'Retiro de clientes - mesa {mesa.numero}'
@@ -266,7 +265,6 @@ class Simulacion:
                     grupo.mesa = mesa
                     mesa.ocupar()
                     grupo.estado = "Esperando toma de pedido"
-                    self.personas_atendidas += grupo.tamaño
                     break
             #Iniciar toma de pedido si hay mozo disponible
             for mozo in self.mozos:
@@ -288,28 +286,31 @@ class Simulacion:
     def simular(self):
         self.reloj = self.minuto_inicial
         i = 0
+        fila = None
         while (len(self.filas)-1)<= self.minuto_corte :
             eventos=self.calcular_proximo_evento()
             print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
-            e = 0
             for evento in eventos:
                 min_minimo = evento[1]
                 evento_nombre = evento[0]
                 if min_minimo >= self.reloj:
                     self.reloj = min_minimo
+                fila = self.simularEvento(evento_nombre,fila)
+                
                 #print(f"Evento: {evento_nombre} - minimo: {min_minimo}")
-                fila = self.simularEvento(evento_nombre)
+                
                 fila.iteracion = i
                 fila.cerrarFila()
-                e += 1
                 #print(f"Iteración {i} - Evento: {fila.evento}")
-                self.filas.append(fila)
+            self.filas.append(fila)
+            fila = None
            # print(fila)
             i += 1
         print("Simulación finalizada")
         print(f"Personas totales: {self.personas_totales}")
         print(f"Personas atendidas: {self.personas_atendidas}")
         print(f"Personas rechazadas: {self.personas_rechazadas}")
+        print(f'aceptadas + rechazadas: {self.personas_atendidas + self.personas_rechazadas}')
     def get_resultados(self):
         filas_simulacion = []
         desde = self.minuto_inicial
@@ -356,8 +357,9 @@ class Simulacion:
             
             # Retornar todos los eventos encontrados
             return resultados
-    def simularEvento(self,evento):
-        fila = self.crearFilaNueva()
+    def simularEvento(self,evento,fila):
+        if fila is None:
+            fila = self.crearFilaNueva()
         if evento == "Inicializar":
             fila = self.inicializar()
             return fila
