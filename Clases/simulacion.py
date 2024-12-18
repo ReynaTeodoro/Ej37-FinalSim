@@ -167,8 +167,8 @@ class Simulacion:
                 fin_preparacion = fila.calcPreparacionPedido()
                 fila.fin_preparacion = fin_preparacion
                 fila.fin_preparacion_mesas[grupo.mesa.numero-1] = fin_preparacion
-                fila.evento = f'Fin Toma de pedido - mesa {mozo.enMesa.numero}'
                 break
+        fila.evento = f'Fin Toma de pedido - mesa {mozo.enMesa.numero}'
         mozo.desocupar()
         for grupo in self.grupos:
             if grupo.estado == "Esperando toma de pedido":
@@ -240,9 +240,9 @@ class Simulacion:
                 fin_comer = fila.calcComer()
                 fila.fin_comer = fin_comer
                 fila.fin_comer_mesas[grupo.mesa.numero-1] = fin_comer
-                fila.evento = f'Fin Llevado de pedido - mesa {mozo.enMesa.numero}'
-                mozo.desocupar()
                 break
+        fila.evento = f'Fin Llevado de pedido - mesa {mozo.enMesa.numero}'
+        mozo.desocupar()
 
     def eventoRetiroGrupo(self,fila:Fila):
         indice_mesa = min((i for i, v in enumerate(fila.fin_comer_mesas) if v is not None), key=lambda i: fila.fin_comer_mesas[i])
@@ -289,7 +289,7 @@ class Simulacion:
         fila = None
         while (len(self.filas)-1)<= self.minuto_corte :
             eventos=self.calcular_proximo_evento()
-            print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
+            #print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
             for evento in eventos:
                 min_minimo = evento[1]
                 evento_nombre = evento[0]
