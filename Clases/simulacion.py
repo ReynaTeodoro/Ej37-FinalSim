@@ -167,9 +167,34 @@ class Simulacion:
                 fin_preparacion = fila.calcPreparacionPedido()
                 fila.fin_preparacion = fin_preparacion
                 fila.fin_preparacion_mesas[grupo.mesa.numero-1] = fin_preparacion
+                fila.evento = f'Fin Toma de pedido - mesa {mozo.enMesa.numero}'
                 break
-        fila.evento = f'Fin Toma de pedido - mesa {mozo.enMesa.numero}'
         mozo.desocupar()
+        for grupo in self.grupos:
+            if grupo.estado == "Esperando toma de pedido":
+                #Priorizar toma de pedido
+                for mozo in self.mozos:
+                    if mozo.estaLibre():
+                        mozo.ocupar()
+                        mozo.enMesa = grupo.mesa
+                        grupo.estado = "Eligiendo pedido"
+                        grupo.mozo = mozo
+                        fin_toma_pedido = fila.calcTomaPedido(grupo)
+                        fila.fin_toma_pedido = fin_toma_pedido
+                        fila.fin_toma_pedido_mozos[mozo.id-1] = fila.fin_toma_pedido
+                        break
+        for grupo in self.grupos:
+            if grupo.mesa:
+                if grupo.mesa.estado == "Pedido listo" and mozo.enMesa is None and grupo.estado == "Esperando entrega pedido":
+                    mesa = grupo.mesa
+                    mozo.ocupar()
+                    mozo.enMesa = mesa
+                    grupo.estado = "Esperando entrega pedido"
+                    grupo.mozo = mozo
+                    fin_llevado_pedido = fila.calcLlevadoPedido()
+                    fila.fin_llevado_pedido = fin_llevado_pedido
+                    fila.fin_llevado_pedido_mozos[mozo.id-1] = fin_llevado_pedido
+                    break
        
     def eventoFinPreparacionPedido(self,fila:Fila):
         indice_mesa = min((i for i, v in enumerate(fila.fin_preparacion_mesas) if v is not None), key=lambda i: fila.fin_preparacion_mesas[i])
@@ -215,9 +240,9 @@ class Simulacion:
                 fin_comer = fila.calcComer()
                 fila.fin_comer = fin_comer
                 fila.fin_comer_mesas[grupo.mesa.numero-1] = fin_comer
+                fila.evento = f'Fin Llevado de pedido - mesa {mozo.enMesa.numero}'
+                mozo.desocupar()
                 break
-        fila.evento = f'Fin Llevado de pedido - mesa {mozo.enMesa.numero}'
-        mozo.desocupar()
 
     def eventoRetiroGrupo(self,fila:Fila):
         indice_mesa = min((i for i, v in enumerate(fila.fin_comer_mesas) if v is not None), key=lambda i: fila.fin_comer_mesas[i])
@@ -265,7 +290,8 @@ class Simulacion:
         i = 0
         while (len(self.filas)-1)<= self.minuto_corte :
             eventos=self.calcular_proximo_evento()
-            #print(f"Eventos: {eventos}")
+            print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
+            e = 0
             for evento in eventos:
                 min_minimo = evento[1]
                 evento_nombre = evento[0]
@@ -275,10 +301,10 @@ class Simulacion:
                 fila = self.simularEvento(evento_nombre)
                 fila.iteracion = i
                 fila.cerrarFila()
+                e += 1
                 #print(f"Iteración {i} - Evento: {fila.evento}")
+                self.filas.append(fila)
            # print(fila)
-            if not fila.evento:
-                break
             i += 1
         print("Simulación finalizada")
         print(f"Personas totales: {self.personas_totales}")
@@ -334,27 +360,21 @@ class Simulacion:
         fila = self.crearFilaNueva()
         if evento == "Inicializar":
             fila = self.inicializar()
-            self.filas.append(fila)
             return fila
         elif evento == "Llegada de cliente":
             self.eventoLlegadaCliente(fila)
-            self.filas.append(fila)
             return fila
         elif evento == "Fin Toma de pedido":
             self.eventoFinTomaPedido(fila)
-            self.filas.append(fila)
             return fila
         elif evento == "Fin Preparacion de pedido":
             self.eventoFinPreparacionPedido(fila)
-            self.filas.append(fila)
             return fila
         elif evento == "Fin Llevado de pedido":
             self.eventoFinLlevadoPedido(fila)
-            self.filas.append(fila)
             return fila
         elif evento == "Retiro de clientes":
             self.eventoRetiroGrupo(fila)
-            self.filas.append(fila)
             return fila
         else:
             fila = Fila(self.generador,self.reloj,self)
