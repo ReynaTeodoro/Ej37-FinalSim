@@ -326,11 +326,13 @@ class Simulacion:
                     
                     fila.iteracion = i
                     fila.cerrarFila()
+                    self.filas.append(fila)
+                    i += 1
                     #print(f"Iteración {i} - Evento: {fila.evento}")
-                self.filas.append(fila)
+                
                 fila = None
             # print(fila)
-                i += 1
+                
         except Exception as e:
             tb = traceback.format_exc()
             print(f"Detalles del error:\n{tb}")

@@ -184,7 +184,8 @@ class Fila():
         
         # Encontramos todos los nombres que tienen el valor mínimo
         nombres_min = [k for k, v in atributos_filtrados.items() if v == valor_min]
-        
+        if len(nombres_min) >= 1:
+            self.evento = nombres_min[0]
         self.siguiente_reloj = valor_min
         return nombres_min, valor_min
     
