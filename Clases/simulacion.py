@@ -5,7 +5,7 @@ from Clases.grupo import Grupo
 from Clases.fila import Fila
 import numpy as np
 import copy
-
+import traceback
 from funciones import GeneradorAleatorio
 class Simulacion:
     def __init__(self,
@@ -73,7 +73,7 @@ class Simulacion:
         self.grupos_finalizados = []
         self.reloj = 0.0
         
-
+        self.n2 = None
         self.personas_totales = 0
         self.personas_rechazadas = 0
         self.personas_atendidas = 0
@@ -115,7 +115,8 @@ class Simulacion:
             fila.fin_preparacion_mesas = copy.deepcopy(self.filas[-1].fin_preparacion_mesas)
             fila.fin_llevado_pedido_mozos = copy.deepcopy(self.filas[-1].fin_llevado_pedido_mozos)
             fila.fin_comer_mesas = copy.deepcopy(self.filas[-1].fin_comer_mesas)
-            fila.n2 = self.filas[-1].n2
+            if self.n2:
+                fila.n2 = self.filas[-1].n2
             
         return fila
     def eventoLlegadaCliente(self,fila:Fila):
@@ -123,6 +124,7 @@ class Simulacion:
         fila.rnd_tamaño = rndTamaño
         grupo = Grupo(self.obtenerIdGrupo(), fila.calcTamañoGrupo())
         fila.tamaño_grupo = grupo.tamaño
+        fila.evento = f'Llegada de cliente {grupo.id_grupo}'
         #print(f"rndTamaño: {rndTamaño} - grupo {grupo.id_grupo} - tamaño: {grupo.tamaño}")
         self.personas_totales += grupo.tamaño
         for mesa in self.mesas:
@@ -172,7 +174,7 @@ class Simulacion:
                     break
         
 
-        fila.evento = f'Llegada de cliente {grupo.id_grupo}' 
+         
         #obtiene la siguiente llegada de cliente
         fila.calcLlegadaCliente()
 
@@ -307,25 +309,31 @@ class Simulacion:
         self.reloj = self.minuto_inicial
         i = 0
         fila = None
-        while (len(self.filas)-1)<= self.minuto_corte :
-            eventos=self.calcular_proximo_evento()
-            #print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
-            for evento in eventos:
-                min_minimo = evento[1]
-                evento_nombre = evento[0]
-                if min_minimo >= self.reloj:
-                    self.reloj = min_minimo
-                fila = self.simularEvento(evento_nombre,fila)
-                
-                #print(f"Evento: {evento_nombre} - minimo: {min_minimo}")
-                
-                fila.iteracion = i
-                fila.cerrarFila()
-                #print(f"Iteración {i} - Evento: {fila.evento}")
-            self.filas.append(fila)
-            fila = None
-           # print(fila)
-            i += 1
+        print("Iniciando simulación")
+        try:
+            while (len(self.filas)-1)<= self.minuto_corte :
+                eventos=self.calcular_proximo_evento()
+                #print(f"Iteracion {i} - {self.reloj}Eventos: {eventos}")
+                for evento in eventos:
+                    min_minimo = evento[1]
+                    evento_nombre = evento[0]
+                    if min_minimo >= self.reloj:
+                        self.reloj = min_minimo
+                    fila = self.simularEvento(evento_nombre,fila)
+                    
+                    #print(f"Evento: {evento_nombre} - minimo: {min_minimo}")
+                    
+                    fila.iteracion = i
+                    fila.cerrarFila()
+                    #print(f"Iteración {i} - Evento: {fila.evento}")
+                self.filas.append(fila)
+                fila = None
+            # print(fila)
+                i += 1
+        except Exception as e:
+            tb = traceback.format_exc()
+            print(f"Detalles del error:\n{tb}")
+            print(f"Error: {e} en la iteración {i}")
         print("Simulación finalizada")
         print(f"Personas totales: {self.personas_totales}")
         print(f"Personas atendidas: {self.personas_atendidas}")
@@ -344,6 +352,7 @@ class Simulacion:
                 break
         filas_simulacion.append(ultimaFila)
         resultados = {
+            "seed": self.seed,
             "personas_totales": self.personas_totales,
             "personas_atendidas": self.personas_atendidas,
             "personas_rechazadas": self.personas_rechazadas,

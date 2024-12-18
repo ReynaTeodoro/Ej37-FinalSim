@@ -453,6 +453,7 @@ class Ui_SimulacionRestaurant(object):
         #Validar tablas
         self.btn_simular.clicked.connect(self.simular)
         self.btn_validar_menu.clicked.connect(self.validarTablaMenu)
+        self.btn_validar_grupo.clicked.connect(self.validarTablaGrupo)
 
         #agregar filas
         self.btn_add_grupo.clicked.connect(self.agregarFilaGrupo)
@@ -608,6 +609,8 @@ class Ui_SimulacionRestaurant(object):
         else:
             rowPosition = table.rowCount()-1
             table.insertRow(rowPosition)
+            table.setItem(rowPosition, 1, QTableWidgetItem("0%"))
+            table.setItem(rowPosition, 0, QTableWidgetItem(f'{rowPosition}'))
     def agregarFilaMenu(self):
         table = self.tbl_menu
         if table.rowCount() == 0:
@@ -616,6 +619,9 @@ class Ui_SimulacionRestaurant(object):
         else:
             rowPosition = table.rowCount()-1
             table.insertRow(rowPosition)
+            table.setItem(rowPosition, 0, QTableWidgetItem(f'Tm{rowPosition}'))
+            table.setItem(rowPosition, 1, QTableWidgetItem("0%"))
+            table.setItem(rowPosition, 2, QTableWidgetItem("0"))
     def confirm_delete_row_grupo(self, row, column):
         """Muestra un mensaje de confirmación para borrar una fila."""
         # Crear un QMessageBox para la confirmación
@@ -651,21 +657,18 @@ class Ui_SimulacionRestaurant(object):
                 min = np.float64(self.tbl_menu.item(i, 2).text())
                 suma += p
                 #Validar que sean numeros
-            
+                #Validar que no esten vacios
                 p = np.float64(p)
                 min = np.float64(min)
             except:
                 self.mostrarError("Los porcentajes o minutos deben ser numeros")
-                return False
-            if p == 100:
-                self.mostrarError("Los porcentajes deben estar dar 100")
                 return False
         self.tbl_menu.item(self.tbl_menu.rowCount() - 1, 1).setText(f'{suma}%')
         self.tbl_menu.item(self.tbl_menu.rowCount() - 1, 0).setText(f'{self.tbl_menu.rowCount() - 1}')
         if suma != 100:
             self.mostrarError("Los porcentajes deben sumar 100")
             return False
-
+        return True
     def validarTablaGrupo(self):
         #Validar que la tabla de menu tenga al menos un item
         if self.tbl_grupo.rowCount() == 0:
@@ -676,86 +679,137 @@ class Ui_SimulacionRestaurant(object):
             try:
                 #Validar que los porcentajes sumen 100
                 p = np.float64(self.tbl_grupo.item(i, 1).text().replace("%", ""))
+                cant = np.float64(self.tbl_grupo.item(i, 0).text())
                 suma += p
                 #Validar que sean numeros
                 p = np.float64(p)
+                if not cant.is_integer() or cant <= 0:
+                    self.mostrarError("Los tamaños de los grupos deben ser números enteros mayores a 0")
+                    return False
+                if p < 0:
+                    self.mostrarError("Los porcentajes deben ser mayores a 0")
+                    return False
             except:
                 self.mostrarError("Los porcentajes deben ser numeros")
-                return False
-            if p == 100:
-                self.mostrarError("Los porcentajes deben estar dar 100")
                 return False
         self.tbl_grupo.item(self.tbl_grupo.rowCount() - 1, 1).setText(f'{suma}%')
         self.tbl_grupo.item(self.tbl_grupo.rowCount() - 1, 0).setText(f'Total')
         if suma != 100:
             self.mostrarError("Los porcentajes deben sumar 100")
             return False
+        return True
+    def validarInputs(self):
+        try:
+            minuto_inicial = np.float64(self.input_i0.value())
+            minuto_corte = np.float64(self.input_tf.value())
+            mostrar_desde = np.int32(self.input_i.value())
+            iteraciones_a_mostrar = np.int32(self.input_i.value())
+            cant_mesas = np.int32(self.input_mesas_2.value())
+            cant_mozos = np.int32(self.input_mozos_2.value())
+            llegada_clientes_min = np.float64(self.input_llegadaClientes.value())
+            llegada_clientes_es_media = self.check_media_llegadaClientes.isChecked()
+            toma_pedido_min = np.float64(self.input_tomaPedido.value())
+            toma_pedido_es_media = self.check_media_tomaPedido.isChecked()
+            llevado_pedido_min = np.float64(self.input_llevadoPedido.value())
+            llevado_pedido_es_media = self.check_media_llevadoPedido.isChecked()
+            media_comer = np.float64(self.input_comer_media.value())
+            comer_desv_estandar = np.float64(self.input_comer_devEstandar.value())
+        except:
+            self.mostrarError("Error al validar los inputs")
+            return False
     def simular(self):
-        #Datos simulacion
-        minuto_inicial = np.float64(self.input_i0.value())
-        minuto_corte = np.float64(self.input_tf.value())
-        mostrar_desde = np.int32(self.input_i.value())
-        iteraciones_a_mostrar = np.int32(self.input_i.value())
+        try:
+            #Datos simulacion
+            minuto_inicial = np.float64(self.input_i0.value())
+            minuto_corte = np.float64(self.input_tf.value())
+            mostrar_desde = np.int32(self.input_i.value())
+            iteraciones_a_mostrar = np.int32(self.input_i.value())
 
-        #Datos restaurante
-        cant_mesas = np.int32(self.input_mesas_2.value())
-        self.cant_mesas = cant_mesas
-        cant_mozos = np.int32(self.input_mozos_2.value())
+            #Datos restaurante
+            cant_mesas = np.int32(self.input_mesas_2.value())
+            self.cant_mesas = cant_mesas
+            cant_mozos = np.int32(self.input_mozos_2.value())
 
-        #Datos eventos
-        llegada_clientes_min = np.float64(self.input_llegadaClientes.value())
-        llegada_clientes_es_media = self.check_media_llegadaClientes.isChecked()
+            #Datos eventos
+            llegada_clientes_min = np.float64(self.input_llegadaClientes.value())
+            llegada_clientes_es_media = self.check_media_llegadaClientes.isChecked()
 
-        toma_pedido_min = np.float64(self.input_tomaPedido.value())
-        toma_pedido_es_media = self.check_media_tomaPedido.isChecked()
+            toma_pedido_min = np.float64(self.input_tomaPedido.value())
+            toma_pedido_es_media = self.check_media_tomaPedido.isChecked()
 
-        llevado_pedido_min = np.float64(self.input_llevadoPedido.value())
-        llevado_pedido_es_media = self.check_media_llevadoPedido.isChecked()
+            llevado_pedido_min = np.float64(self.input_llevadoPedido.value())
+            llevado_pedido_es_media = self.check_media_llevadoPedido.isChecked()
 
-        media_comer = np.float64(self.input_comer_media.value())
+            media_comer = np.float64(self.input_comer_media.value())
+            comer_desv_estandar = np.float64(self.input_comer_devEstandar.value())
+            if not self.validarTablaMenu() or not self.validarTablaGrupo():
+                self.mostrarError("Error al validar las tablas")
+                return
+            if not self.validarNormal():
+                return
+            #Datos menu
+            menu = []
+            for i in range(self.tbl_menu.rowCount()-1):
+                #Foramto de fila  {"Menu": "Tm1", "P(%)": 0.33, "Minutos preparacion": 10}
+                #le sacamos el % al valor de la probabilidad y dividimos por 100
+                p0 = np.float64(self.tbl_menu.item(i, 1).text().replace("%", "")) / 100
+                menu.append({"Menu": self.tbl_menu.item(i, 0).text(), "P(%)": p0, "Minutos preparacion": np.float64(self.tbl_menu.item(i, 2).text())})
+            
+            #Datos grupos
+            grupos = []
+            for i in range(self.tbl_grupo.rowCount()-1):
+                #Formato de fila  {"Tamaño": 1, "P(%)": 0.25}
+                #le sacamos el % al valor de la probabilidad y dividimos por 100
+                p = np.float64(self.tbl_grupo.item(i, 1).text().replace("%", "")) / 100
+                grupos.append({"Tamaño": np.int32(self.tbl_grupo.item(i, 0).text()), "P(%)": p})
+            
+            #Simulacion
+            simulacion = Simulacion(
+            seed = 2,
+            minuto_inicial=minuto_inicial,
+            minuto_corte=minuto_corte,
+            mostrar_desde=mostrar_desde,
+            iteraciones_a_mostrar=iteraciones_a_mostrar,
+            cant_mesas=cant_mesas,
+            cant_mozos=cant_mozos,
+            llegada_clientes_min=llegada_clientes_min,
+            llegada_clientes_es_media=llegada_clientes_es_media,
+            toma_pedido_min=toma_pedido_min,
+            toma_pedido_es_media=toma_pedido_es_media,
+            llevado_pedido_min=llevado_pedido_min,
+            llevado_pedido_es_media=llevado_pedido_es_media,
+            comer_media=media_comer,
+            comer_desv_estandar=comer_desv_estandar,
+            menu_items=menu,
+            grupos_items=grupos
+        )
+            
+            simulacion.simular()
+            filas_rto,resultados = simulacion.get_resultados()
+            self.cargarTblSimulacion(filas_rto,resultados)
+        except Exception as e:
+            print(e)
+            self.mostrarError(str(e))
+    def validarNormal(self):
+        comer_media = np.float64(self.input_comer_media.value())
         comer_desv_estandar = np.float64(self.input_comer_devEstandar.value())
-
-        self.validarTablaMenu()
-        self.validarTablaGrupo()
-        #Datos menu
-        menu = []
-        for i in range(self.tbl_menu.rowCount()-1):
-            #Foramto de fila  {"Menu": "Tm1", "P(%)": 0.33, "Minutos preparacion": 10}
-            #le sacamos el % al valor de la probabilidad y dividimos por 100
-            p0 = np.float64(self.tbl_menu.item(i, 1).text().replace("%", "")) / 100
-            menu.append({"Menu": self.tbl_menu.item(i, 0).text(), "P(%)": p0, "Minutos preparacion": np.float64(self.tbl_menu.item(i, 2).text())})
-        
-        #Datos grupos
-        grupos = []
-        for i in range(self.tbl_grupo.rowCount()-1):
-            #Formato de fila  {"Tamaño": 1, "P(%)": 0.25}
-            #le sacamos el % al valor de la probabilidad y dividimos por 100
-            p = np.float64(self.tbl_grupo.item(i, 1).text().replace("%", "")) / 100
-            grupos.append({"Tamaño": np.int32(self.tbl_grupo.item(i, 0).text()), "P(%)": p})
-        
-        #Simulacion
-        simulacion = Simulacion(
-        seed = 2,
-        minuto_inicial=minuto_inicial,
-        minuto_corte=minuto_corte,
-        mostrar_desde=mostrar_desde,
-        iteraciones_a_mostrar=iteraciones_a_mostrar,
-        cant_mesas=cant_mesas,
-        cant_mozos=cant_mozos,
-        llegada_clientes_min=llegada_clientes_min,
-        llegada_clientes_es_media=llegada_clientes_es_media,
-        toma_pedido_min=toma_pedido_min,
-        toma_pedido_es_media=toma_pedido_es_media,
-        llevado_pedido_min=llevado_pedido_min,
-        llevado_pedido_es_media=llevado_pedido_es_media,
-        comer_media=media_comer,
-        comer_desv_estandar=comer_desv_estandar,
-        menu_items=menu,
-        grupos_items=grupos
-    )
-        simulacion.simular()
-        filas_rto,resultados = simulacion.get_resultados()
-        self.cargarTblSimulacion(filas_rto,resultados)
+        if comer_media >= (comer_desv_estandar *3):
+            return True
+        else:
+            #preguntar si quiere simular igual con esos valores
+            reply = QMessageBox.question(
+                self.tbl_grupo,
+                "Confirmar eliminación", 
+                f"¿La media no es  3*desv mas grande simular igual y cambiar negativos por 0.1?", 
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                return True
+            if reply == QMessageBox.No:
+                return False
+            else:
+                return False
     def cargarTblSimulacion(self,filas,resultados):
         self.tbl_simulacion.setRowCount(0)
 
@@ -798,6 +852,7 @@ class Ui_SimulacionRestaurant(object):
         # Eliminar la primera columna (si es necesario)
         self.tbl_simulacion.removeColumn(0)
         self.tbl_simulacion.resizeColumnsToContents()
+        self.rta_seed.setText(str(resultados["seed"]))
         self.rta_personas.setText(str(resultados["personas_totales"]))
         self.rta_atendidas.setText(str(resultados["personas_atendidas"]))
         self.rta_rechazadas_2.setText(str(resultados["personas_rechazadas"]))

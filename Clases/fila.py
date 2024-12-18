@@ -80,6 +80,8 @@ class Fila():
         else:
             self.rnd_llegada_cliente = None
             self.tiempo_llegada_cliente = self.simulacion.llegada_clientes_min
+        if self.tiempo_llegada_cliente <= 0:
+            self.tiempo_llegada_cliente = 0.1
         self.proxima_llegada_cliente = self.reloj_actual + self.tiempo_llegada_cliente
         return self.proxima_llegada_cliente
     
@@ -90,6 +92,8 @@ class Fila():
             acumulado += grupo["P(%)"]
             if self.rnd_tamaño < acumulado:
                 return grupo["Tamaño"]
+            if self.rnd_tamaño == 1:
+                return self.simulacion.grupos_items[-1]["Tamaño"]
         return None
     def calcTomaPedido(self, grupo):
         """Calcula los datos random de la toma de pedido"""
@@ -99,16 +103,21 @@ class Fila():
         else:
             self.rnd_tiempo_toma_pedido = None
             self.tiempo_toma_pedido = self.simulacion.toma_pedido_min
+        if self.tiempo_toma_pedido <= 0:
+            self.tiempo_toma_pedido = 0.1
         self.fin_toma_pedido = self.reloj_actual + (self.tiempo_toma_pedido * tamaño) 
         return self.fin_toma_pedido
 
     def calcMenu(self,rnd):
         """Calcula el menu seleccionado"""
         acumulado = 0
+        rnd = 0.33
         for menu in self.simulacion.menu_items:
             acumulado += menu["P(%)"]
             if rnd < acumulado:
                 return menu
+            if rnd == 1:
+                return self.simulacion.menu_items[-1]
         return None
 
     def calcPreparacionPedido(self):
@@ -117,6 +126,8 @@ class Fila():
         self.menu_seleccionado = self.calcMenu(self.rnd_seleccion)
         #print(f'RND seleccion: {self.rnd_seleccion}, Menu seleccionado: {self.menu_seleccionado}')
         self.tiempo_de_preparacion = self.menu_seleccionado["Minutos preparacion"]
+        if self.tiempo_de_preparacion <= 0:
+            self.tiempo_de_preparacion = 0.1
         self.fin_preparacion = self.reloj_actual + self.tiempo_de_preparacion
         return self.fin_preparacion
 
@@ -127,6 +138,8 @@ class Fila():
         else:
             self.rnd_llevado_pedido = None
             self.tiempo_de_llevado_pedido = self.simulacion.llevado_pedido_min
+        if self.tiempo_de_llevado_pedido <= 0:
+            self.tiempo_de_llevado_pedido = 0.1
         self.fin_llevado_pedido = self.reloj_actual + self.tiempo_de_llevado_pedido
         return self.fin_llevado_pedido
     
@@ -135,14 +148,18 @@ class Fila():
         self.rnd1 = self.generador.generar_uniforme(0,1)
         self.rnd2 = self.generador.generar_uniforme(0,1)
         self.n1,self.n2 = self.generador.generar_normales(self.simulacion.comer_media,self.simulacion.comer_desv_estandar,2)
+        self.simulacion.n2 = self.n2
         return self.rnd1,self.rnd2,self.n1,self.n2
     
     def calcComer(self):
         if self.n2:
             self.tiempo_para_comer = self.n2
+            self.simulacion.n2 = None
         else:
             self.calcRNDSRetiroClientes()
             self.tiempo_para_comer = self.n1
+        if self.tiempo_para_comer <= 0:
+            self.tiempo_para_comer = 0.1
         self.fin_comer = self.reloj_actual + self.tiempo_para_comer
         return self.fin_comer
     def calcSiguienteEvento(self):
